@@ -4,17 +4,15 @@ from nta import calculate_score
 # 1. Page Configuration
 st.set_page_config(page_title="UGC NET Score Calculator", page_icon="🎓", layout="centered")
 
-# 2. Universal & Reflective CSS Theme
+# 2. Universal Theme Stylesheet Injection
 st.markdown("""
 <style>
-    /* Import modern clean typography */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
     
     .stApp {
         font-family: 'Inter', sans-serif;
     }
 
-    /* Modern Glass-Glow Header Card */
     .neo-header {
         background: linear-gradient(135deg, #0f172a, #1e3a8a);
         padding: 35px 25px;
@@ -43,7 +41,6 @@ st.markdown("""
         opacity: 0.9;
     }
 
-    /* Theme-Aware Dynamic Upload Box Wrapper */
     div[data-testid="stFileUploader"] {
         background-color: var(--secondary-background-color) !important;
         border: 2px dashed var(--primary-color) !important;
@@ -59,12 +56,10 @@ st.markdown("""
         border-color: #f97316 !important;
     }
 
-    /* Force safety compliance for internal text elements across light/dark profiles */
     div[data-testid="stFileUploader"] * {
         color: var(--text-color) !important;
     }
 
-    /* Universal Clean Button Component */
     .stButton>button {
         background: linear-gradient(90deg, #2563eb, #1d4ed8);
         color: #ffffff !important;
@@ -85,17 +80,25 @@ st.markdown("""
         background: linear-gradient(90deg, #1d4ed8, #1e40af);
     }
     
-    /* Elegant Title Labels */
     .block-container h3 {
         color: var(--text-color) !important;
         font-weight: 600 !important;
         font-size: 1.2rem !important;
         margin-bottom: 12px;
     }
+
+    /* Summary Card Text Elements */
+    .metric-card-title {
+        margin: 0; 
+        font-size: 0.9rem; 
+        color: var(--text-color); 
+        opacity: 0.85; 
+        font-weight: 600;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# 3. Application Header (Updated to be clean and simple)
+# 3. Application Header
 st.markdown("""
     <div class="neo-header">
         <h1>UGC NET Score Calculator</h1>
@@ -103,7 +106,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 4. Multi-Column Upload Layout
+# 4. Input Column Layout
 col1, col2 = st.columns(2)
 
 with col1:
@@ -116,17 +119,50 @@ with col2:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
-# 5. Core Operational Logic
+# 5. Runtime Operational Logic
 if response_pdf and answer_key_pdf:
     if st.button("Calculate My Score", use_container_width=True):
-        with st.spinner("Analyzing PDFs and computing score..."):
+        with st.spinner("Analyzing data models and calculating final scores..."):
             try:
-                result_excel_buffer = calculate_score(response_pdf, answer_key_pdf)
-                st.success("✅ Calculation Complete! Your file is ready.")
+                # Unpack calculation results
+                excel_bytes, score, gained, missed, corrects = calculate_score(response_pdf, answer_key_pdf)
                 
+                st.success("✅ Calculation Complete! Review your performance matrix below.")
+                
+                # 6. Live UI Metrics Block (Dynamic Theme Aware Container Rendering)
+                st.markdown("### 📊 Performance Overview")
+                m_col1, m_col2, m_col3 = st.columns(3)
+                
+                with m_col1:
+                    st.markdown(f"""
+                        <div style="background-color: var(--secondary-background-color); padding: 22px 15px; border-radius: 14px; border: 1px solid var(--primary-color); text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <p class="metric-card-title">Total Score</p>
+                            <h2 style="margin: 8px 0 0 0; color: #2563eb; font-weight: 800; font-size: 1.8rem;">{score} / 300</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                with m_col2:
+                    st.markdown(f"""
+                        <div style="background-color: var(--secondary-background-color); padding: 22px 15px; border-radius: 14px; border: 1px solid #10b981; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <p class="metric-card-title">Marks Gained</p>
+                            <h2 style="margin: 8px 0 0 0; color: #10b981; font-weight: 800; font-size: 1.8rem;">+{gained}</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+                with m_col3:
+                    st.markdown(f"""
+                        <div style="background-color: var(--secondary-background-color); padding: 22px 15px; border-radius: 14px; border: 1px solid #ef4444; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                            <p class="metric-card-title">Marks Missed</p>
+                            <h2 style="margin: 8px 0 0 0; color: #ef4444; font-weight: 800; font-size: 1.8rem;">-{missed}</h2>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # File Export Triggers
                 st.download_button(
-                    label="⬇️ Download Result.xlsx",
-                    data=result_excel_buffer,
+                    label="⬇️ Download Detailed Result.xlsx",
+                    data=excel_bytes,
                     file_name="UGC_NET_Result.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     use_container_width=True
