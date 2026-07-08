@@ -4,24 +4,23 @@ from nta import calculate_score
 # 1. Set up the page layout and default theme
 st.set_page_config(page_title="UGC NET Score Calculator", page_icon="🎓", layout="centered")
 
-# 2. Inject Custom CSS for the "Futuristic NTA" aesthetic
+# 2. Inject Custom CSS for the "Cyber-Dark" aesthetic
 st.markdown("""
 <style>
-    /* Light, clean background to make the blue/orange pop */
+    /* Deep dark background */
     .stApp {
-        background-color: #f4f7f9;
+        background-color: #0b0f19;
     }
 
-    /* Neo-Generation Header: Deep Navy Blue Gradient */
+    /* Neo-Header: Dark Gradient */
     .neo-header {
-        background: linear-gradient(135deg, #001f3f, #003366, #00509e);
+        background: linear-gradient(135deg, #111827, #1f2937);
         padding: 30px;
         border-radius: 16px;
-        color: white;
         text-align: center;
-        box-shadow: 0 10px 25px rgba(0, 51, 102, 0.3);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         margin-bottom: 30px;
-        border: 1px solid rgba(255,255,255,0.1);
+        border: 1px solid #374151;
     }
     
     .neo-header h1 {
@@ -29,42 +28,45 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
         font-weight: 800;
         letter-spacing: -1px;
-        color: #ffffff;
+        color: #3b82f6; /* Bright Cyber Blue */
     }
     
     .neo-header p {
         margin: 5px 0 0 0;
         font-size: 1.1rem;
-        color: #e0e0e0;
+        color: #9ca3af;
         font-weight: 300;
     }
 
-    /* Upload Box Styling (Sleek and rounded) */
+    /* Upload Box Styling (Dark and sleek) */
     div[data-testid="stFileUploader"] {
-        background: #ffffff;
-        border: 2px dashed #00509e;
+        background: #1f2937;
+        border: 2px dashed #3b82f6;
         border-radius: 16px;
         padding: 15px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
         transition: all 0.3s ease;
     }
     
     div[data-testid="stFileUploader"]:hover {
-        border-color: #ff9900;
-        background: #fffcf9;
-        box-shadow: 0 6px 20px rgba(255, 153, 0, 0.15);
+        border-color: #f97316; /* NTA Orange on hover */
+        background: #374151;
+    }
+
+    /* FORCE text colors inside the uploader so it never vanishes */
+    div[data-testid="stFileUploader"] * {
+        color: #e5e7eb !important; 
     }
 
     /* Futuristic Action Button (NTA Orange Gradient) */
     .stButton>button {
-        background: linear-gradient(90deg, #ff8c00, #ffb347);
+        background: linear-gradient(90deg, #f97316, #fb923c);
         color: white !important;
         font-weight: bold;
         font-size: 1.1rem;
         border: none;
         border-radius: 50px; /* Pill shape */
         padding: 12px 0;
-        box-shadow: 0 8px 20px rgba(255, 140, 0, 0.3);
+        box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4);
         transition: all 0.3s ease;
         width: 100%;
         text-transform: uppercase;
@@ -72,14 +74,14 @@ st.markdown("""
     }
 
     .stButton>button:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 25px rgba(255, 140, 0, 0.5);
-        background: linear-gradient(90deg, #ff9d2e, #ffc061);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(249, 115, 22, 0.6);
+        background: linear-gradient(90deg, #ea580c, #f97316);
     }
     
     /* Subheaders */
     h3 {
-        color: #003366;
+        color: #60a5fa !important;
         font-weight: 600;
     }
 </style>
