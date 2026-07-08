@@ -1,138 +1,142 @@
-import io
 import pdfplumber
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.utils.dataframe import dataframe_to_rows
+import io
+import re
 
-def extract_question_data(pdf_file):
+def extract_response_sheet(pdf_file):
     """
-    Extracts question ID and chosen option data from the UGC PDF.
+    Robustly extracts Question IDs and Chosen Options from the response sheet PDF.
+    Tracks context sequentially line-by-line to prevent index misalignment errors.
     """
-    question_data = []
-    # pdfplumber works perfectly with Streamlit's uploaded file objects
-    with pdfplumber.open(pdf_file) as pdf:
-        for page_num, page in enumerate(pdf.pages):
-            text = page.extract_text()
-            if not text:
-                continue
-            lines = text.split("\n")
-
-            question_ids = []
-            chosen_options = []
-            correct_option = []
-
-            for line in lines:
-                if "Question ID :" in line:
-                    question_ids.append(line.split(":")[1].strip())
-                elif "Chosen Option :" in line:
-                    chosen_options.append(line.split(":")[1].strip())
-                elif "Correct Option :" in line:
-                    correct_option.append(line.split(":")[1].strip())
-                    correct_option = []
-
-            for i in range(len(question_ids)):
-                # Added a safety check in case options are blank/missing
-                chosen_opt = chosen_options[i] if i < len(chosen_options) else "Not Attempted"
-                question_data.append({
-                    "Question ID": question_ids[i],
-                    "Chosen Option": chosen_opt
-                })
-
-    sorted_question_data = sorted(question_data, key=lambda x: int(x['Question ID']))
-    return sorted_question_data
-
-def extract_correct_option_data(pdf_file):
-    """
-    Extracts question IDs and correct options from the answer key PDF.
-    """
-    question_data = []
+    records = []
+    current_q_id = None
     
     with pdfplumber.open(pdf_file) as pdf:
-        for page_num, page in enumerate(pdf.pages):
+        for page in pdf.pages:
             text = page.extract_text()
             if not text:
                 continue
             lines = text.split("\n")
-
-            collecting = False
-            question_ids = []
-            correct_options = []
-
             for line in lines:
-                if "Question ID" in line and "Correct Option" in line:
-                    collecting = True
-                    continue
+                # Standardize whitespace format around delimiters
+                line_clean = line.replace(" :", ":")
+                
+                # Capture target Question ID block
+                if "Question ID:" in line_clean:
+                    parts = line_clean.split("Question ID:")
+                    if len(parts) > 1:
+                        current_q_id = parts[1].strip()
+                
+                # Pair with its matching Chosen Option contextually
+                elif "Chosen Option:" in line_clean and current_q_id:
+                    parts = line_clean.split("Chosen Option:")
+                    chosen = parts[1].strip() if len(parts) > 1 else "--"
+                    
+                    records.append({
+                        "Question ID": current_q_id,
+                        "Chosen Option": chosen
+                    })
+                    current_q_id = None  # Reset pointer for the next question block
+                    
+    df = pd.DataFrame(records)
+    if not df.empty:
+        df.drop_duplicates(subset=["Question ID"], keep="last", inplace=True)
+    return df
 
-                if collecting:
-                    if line.strip() and not any(x in line for x in ["Page", "https://"]):
-                        columns = line.split()
-                        
-                        if len(columns) >= 3:
-                            try:
-                                question_id = columns[1].strip()
-                                correct_option = columns[2].strip()
-
-                                question_ids.append(question_id)
-                                correct_options.append(correct_option)
-                            except IndexError:
-                                continue
-
-            for i in range(len(question_ids)):
-                question_data.append({
-                    "Question ID": question_ids[i],
-                    "Correct Option": correct_options[i],
-                })
-
-    return question_data
-
-def calculate_score(response_file, answer_key_file):
+def extract_answer_key(pdf_file):
     """
-    Master function to process files and return an Excel file in memory.
+    Extracts Question IDs and Correct Options from the official answer key PDF.
     """
-    # Extract data from both PDFs
-    question_data_ugc = extract_question_data(response_file)
-    question_data_ans = extract_correct_option_data(answer_key_file)
+    records = []
+    with pdfplumber.open(pdf_file) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text()
+            if not text:
+                continue
+            lines = text.split("\n")
+            for line in lines:
+                # Pattern matches standard 10-digit Question IDs followed by Option IDs
+                match = re.search(r'(\d{10})\s+(\d+)', line)
+                if match:
+                    q_id = match.group(1)
+                    correct_opt = match.group(2)
+                    records.append({
+                        "Question ID": q_id,
+                        "Correct Option": correct_opt
+                    })
+    df = pd.DataFrame(records)
+    if not df.empty:
+        df.drop_duplicates(subset=["Question ID"], inplace=True)
+    return df
 
-    # Convert the extracted data to DataFrames
-    df1 = pd.DataFrame(question_data_ugc, columns=['Question ID', 'Chosen Option'])
-    df2 = pd.DataFrame(question_data_ans, columns=['Question ID', 'Correct Option'])
+def calculate_score(response_pdf, answer_key_pdf):
+    """
+    Processes inputs, computes evaluation matrices, writes structured reports,
+    and returns localized statistical parameters along with the raw document stream.
+    """
+    df_response = extract_response_sheet(response_pdf)
+    df_key = extract_answer_key(answer_key_pdf)
 
-    # Merge the DataFrames on 'Question ID'
-    combined_df = pd.merge(df1, df2, on='Question ID', how='outer')
+    if df_response.empty or df_key.empty:
+        raise ValueError("Extraction yielded empty datasets. Verify document structure accuracy.")
 
-    # Determine if the chosen option is correct
-    combined_df['Mark'] = combined_df.apply(
-        lambda row: 'Correct' if row['Chosen Option'] == row['Correct Option'] else 'Incorrect',
-        axis=1
-    )
+    # Execute a Left Join to isolate processing to official answer key structures exclusively
+    combined_df = pd.merge(df_key, df_response, on="Question ID", how="left")
+    
+    # Standardize blank or unmatched values as explicit unattempted entries
+    combined_df["Chosen Option"] = combined_df["Chosen Option"].fillna("--")
 
-    # Calculate counts and marks
-    correct_count = combined_df['Mark'].value_counts().get('Correct', 0)
-    incorrect_count = combined_df['Mark'].value_counts().get('Incorrect', 0)
+    def evaluate_row(row):
+        chosen = str(row["Chosen Option"]).strip()
+        correct = str(row["Correct Option"]).strip()
+        if chosen in ["--", "", "-"]:
+            return "Unattempted"
+        elif chosen == correct:
+            return "Correct"
+        else:
+            return "Incorrect"
+
+    combined_df["Mark"] = combined_df.apply(evaluate_row, axis=1)
+    combined_df = combined_df[["Question ID", "Chosen Option", "Correct Option", "Mark"]]
+
+    # Calculate final examination metrics
+    correct_count = int((combined_df["Mark"] == "Correct").sum())
+    incorrect_count = int((combined_df["Mark"] == "Incorrect").sum())
+    unattempted_count = int((combined_df["Mark"] == "Unattempted").sum())
     
     marks_gained = correct_count * 2
-    marks_lost = incorrect_count * 2
+    marks_missed = incorrect_count * 2  # Marks missed due to wrong answers
+    total_score = marks_gained
 
-    # Create a new Workbook and add the extracted data
+    # Build spreadsheet structure
     workbook = Workbook()
     worksheet = workbook.active
-    worksheet.title = 'Combined Data'
+    worksheet.title = "Evaluation Report"
 
-    # Write the DataFrame to the sheet
+    # Write target table columns
     for r in dataframe_to_rows(combined_df, index=False, header=True):
         worksheet.append(r)
 
-    # Write summary data directly below the existing data
+    # Append clean summary block separated down below the matrix data rows
     row_offset = len(combined_df) + 3
-    worksheet.cell(row=row_offset, column=1, value='Marks Gained')
-    worksheet.cell(row=row_offset, column=2, value=marks_gained)
-    worksheet.cell(row=row_offset + 1, column=1, value='Marks Lost')
-    worksheet.cell(row=row_offset + 1, column=2, value=marks_lost)
+    summary_data = [
+        ("Total Questions", len(combined_df)),
+        ("Correct Answers", correct_count),
+        ("Incorrect Answers", incorrect_count),
+        ("Unattempted Questions", unattempted_count),
+        ("Marks Gained", marks_gained),
+        ("Final Score Secured", total_score)
+    ]
+    
+    for label, val in summary_data:
+        worksheet.cell(row=row_offset, column=1, value=label)
+        worksheet.cell(row=row_offset, column=2, value=val)
+        row_offset += 1
 
-    # --- THE MAGIC HAPPENS HERE ---
-    # Instead of saving to disk, we save to an in-memory buffer
     excel_buffer = io.BytesIO()
     workbook.save(excel_buffer)
-    excel_buffer.seek(0) # Reset the pointer so Streamlit can read it from the beginning
+    excel_buffer.seek(0)
 
-    return excel_buffer
+    return excel_buffer.getvalue(), total_score, marks_gained, marks_missed, correct_count
