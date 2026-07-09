@@ -2,17 +2,22 @@
 
 A clean, fast, and automated tool designed to help UGC NET aspirants instantly evaluate their performance without hours of manual cross-checking.
 
-## ✨ Features
-* **Automated:** Parses official response sheets and answer keys instantly.
-* **Detailed Export:** Generates an Excel spreadsheet breaking down performance question-by-question.
-* **Privacy Focused:** Your files are processed entirely in server memory and are never saved or stored anywhere.
-* **Universal Interface:** Clean, theme-reflective design that automatically adapts beautifully to both Light and Dark modes.
+**[👉 Click here to use the live calculator!](https://ugcnetcalc.streamlit.app/)**
+
+---
+
+## 📁 Try it with Demo Files
+If you don't have your files ready yet and want to see how the app works, you can use the sample files included right here in this repository:
+* [📥 Download Sample Response Sheet (ugc.pdf)](ugc.pdf)
+* [📥 Download Sample Answer Key (ans.pdf)](ans.pdf)
+
+Simply download both sample PDFs above, upload them to the live web app, and see the automated scoring engine in action!
 
 ---
 
 ## 📥 How to Get Your Required PDFs
 
-To use the calculator, you need two specific PDF files:
+To use the calculator with your own results, you need two specific PDF files:
 
 ### 1. Your Question Paper (Response Sheet)
 * Log in to the official NTA UGC NET candidate portal.
@@ -27,11 +32,11 @@ To use the calculator, you need two specific PDF files:
 
 ## 🚀 How to Use the Web App
 
-1. Open the live web application link.
+1. Open the live web application link: [https://ugcnetcalc.streamlit.app/](https://ugcnetcalc.streamlit.app/)
 2. Drag and drop your **Response Sheet PDF** into Box 1.
 3. Drag and drop your **Answer Key PDF** into Box 2.
 4. Click the **Calculate My Score** button.
-5. Download your resulting analysis spreadsheet!
+5. View your immediate score breakdown on screen and download your detailed spreadsheet!
 
 ---
 
@@ -41,8 +46,8 @@ The app provides a downloadable Excel file containing a clear matrix of your exa
 * **Question ID:** The unique tracking number for each specific question.
 * **Chosen Option:** The option ID you picked during the exam.
 * **Correct Option:** The official answer key designation.
-* **Mark:** Explicitly flags whether a question is `Correct` or `Incorrect`.
-* **Summary Blocks:** Located at the bottom of the worksheet, detailing total **Marks Gained** (+2 per correct answer) and **Marks Lost**.
+* **Mark:** Explicitly flags whether a question is `Correct`, `Incorrect`, or `Unattempted`.
+* **Summary Blocks:** Located at the bottom of the worksheet, detailing total **Marks Gained** (+2 per correct answer) and **Marks Missed**.
 
 ---
 
