@@ -6,15 +6,6 @@ A clean, fast, and automated tool designed to help UGC NET aspirants instantly e
 
 ---
 
-## 📁 Try it with Demo Files
-If you don't have your files ready yet and want to see how the app works, you can use the sample files included right here in this repository:
-* [📥 Download Sample Response Sheet (ugc.pdf)](ugc.pdf)
-* [📥 Download Sample Answer Key (ans.pdf)](ans.pdf)
-
-Simply download both sample PDFs above, upload them to the live web app, and see the automated scoring engine in action!
-
----
-
 ## 📥 How to Get Your Required PDFs
 
 To use the calculator with your own results, you need two specific PDF files:
